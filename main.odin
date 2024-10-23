@@ -22,29 +22,40 @@ COLLISIONS: int = 0
 
 enemies: [dynamic]Enemy
 
+
+//Function just spawns a bunch of enemies at random locations and speed
 spawn_enemies :: proc() {
     for i in 0..<NUM_ENEMIES {
-        enemy := Enemy{
-            position = [2]f32{
-                rand.float32_range(150, SCREEN_WIDTH-150),
-                rand.float32_range(150, SCREEN_HEIGHT-150) ,
-            },
-            velocity = [2]f32{
-                rand.float32_range(-4,4),
-                rand.float32_range(-4,4)
-            },
-            width = 100,
-            height = 100,
-            collided = false
-        }
-        append(&enemies, enemy)
+       create_enemy()
     }
+}
+
+create_enemy :: proc() {
+    enemy := Enemy{
+        position = [2]f32{
+            rand.float32_range(150, SCREEN_WIDTH-150),
+            rand.float32_range(150, SCREEN_HEIGHT-150) ,
+        },
+        velocity = [2]f32{
+            rand.float32_range(-4,4),
+            rand.float32_range(-4,4)
+        },
+        width = 100,
+        height = 100,
+        collided = false
+    }
+    append(&enemies, enemy)
+}
+
+is_key_pressed :: proc(key: rl.KeyboardKey) -> bool {
+    return rl.IsKeyPressed(key)
 }
 
 main :: proc() {
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sort, Sweep and Prune")
     rl.SetTargetFPS(60)
 
+    //Prepare enemies and create Edge array
     spawn_enemies()
     populate_edge_array()
 
@@ -54,10 +65,15 @@ main :: proc() {
 
         deltaTime := rl.GetFrameTime()
 
+        //Sort the edges either by insertion or use heap_sort
         insertion_sort_edges()
         //sort.heap_sort_proc(edges[:], sort_edges)
+        
+        //Check For collision
         sweep_prune()
 
+
+        //Update enemy positions
         for &enemy, index in enemies {
             enemy.position.x += enemy.velocity.x
             enemy.position.y += enemy.velocity.y
@@ -73,7 +89,7 @@ main :: proc() {
         rl.BeginDrawing()
         rl.ClearBackground(rl.RAYWHITE)
 
-
+        //Render Enemies
         for enemy in enemies {
             rect := rl.Rectangle{
                 x = enemy.position.x,
@@ -87,6 +103,8 @@ main :: proc() {
                 rl.DrawRectanglePro(rect, rl.Vector2{50, 50}, 0, rl.BLUE)
             }
         }
+
+        //Show collisions and check count
         check_string := fmt.ctprintf("Total Checks: %v", TOTAL_CHECKS)
         collision_string := fmt.ctprintf("Collisions: %v", COLLISIONS)
         rl.DrawText(check_string, 25, 25, 20, rl.BLACK)

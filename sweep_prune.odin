@@ -100,6 +100,8 @@ sweep_prune :: proc() {
     }
 }
 
+
+//A simple sweep that breaks the loop if X position is greater.
 simple_sweep :: proc() {
     TOTAL_CHECKS = 0
     COLLISIONS = 0
@@ -128,6 +130,8 @@ simple_sweep :: proc() {
                 width = enemy_2.width,
                 height = enemy_2.height
             }
+
+            //If X is greater than current object x then it is not possible they will collide
             if rect_2.x >= rect.x + rect.width || index == index_2 {
                 break;
             }
