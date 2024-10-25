@@ -113,5 +113,7 @@ main :: proc() {
         rl.EndDrawing()
     }
 
+    delete(enemies)
+    delete(edges)
     rl.CloseWindow()
 }
