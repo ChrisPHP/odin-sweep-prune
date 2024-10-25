@@ -6,20 +6,19 @@ import "core:fmt"
 Edge :: struct {
     value: f32,
     is_start: bool,
-    index: int,
+    index: i32,
 }
 
 edges: [dynamic]Edge
 
 //Populate the Edge Array
-populate_edge_array :: proc() {
-    for e,i in enemies {
-        start := e.position.x
-        end := e.position.x + e.width
+populate_edge_array :: proc(key: i32) {
+    value := enemies[key]
+    start := value.position.x
+    end := value.position.x + value.width
 
-        append(&edges, Edge{value = start, is_start = true, index = i})
-        append(&edges, Edge{value = end, is_start = false, index = i})
-    }
+    append(&edges, Edge{value = start, is_start = true, index = key})
+    append(&edges, Edge{value = end, is_start = false, index = key})
 }
 
 //Sort by X value
@@ -50,11 +49,18 @@ sweep_prune :: proc() {
     COLLISIONS = 0
     TOTAL_CHECKS = 0
 
-    active_entities := make([dynamic]int)
+    active_entities := make([dynamic]i32)
     defer delete(active_entities)
 
-    for &edge in edges {
+    for &edge, i in edges {
         TOTAL_CHECKS += 1
+
+        _, ok := enemies[edge.index]
+        if !ok {
+            ordered_remove(&edges, i)
+            continue 
+        }
+
         //Check if the edge is the left side of the object on X axis
         if edge.is_start {
             edge.value = enemies[edge.index].position.x
@@ -77,9 +83,19 @@ sweep_prune :: proc() {
                 }
                 if rl.CheckCollisionRecs(r1, r2) {
                     COLLISIONS += 1
-                    enemies[edge.index].collided = true
+                    e_1 := enemies[edge.index]
+                    e_2 := enemies[other]
+                    e_1.collided = true
+                    e_2.collided = true
+                    enemies[edge.index] = e_1
+                    enemies[other] = e_2
                 } else {
-                    enemies[edge.index].collided = false
+                    e_1 := enemies[edge.index]
+                    e_2 := enemies[other]
+                    e_1.collided = false
+                    e_2.collided = false
+                    enemies[edge.index] = e_1
+                    enemies[other] = e_2
                 }
             }
             append(&active_entities, edge.index)
@@ -106,7 +122,8 @@ simple_sweep :: proc() {
     TOTAL_CHECKS = 0
     COLLISIONS = 0
 
-    for &enemy, index in enemies {
+    for index in enemies {
+        enemy := &enemies[index]
         enemy.position.x += enemy.velocity.x
         enemy.position.y += enemy.velocity.y
 
@@ -123,7 +140,7 @@ simple_sweep :: proc() {
             height = enemy.height
         }
 
-        for enemy_2, index_2 in enemies {
+        for index_2, enemy_2 in enemies {
             rect_2 := rl.Rectangle{
                 x = enemy_2.position.x,
                 y = enemy_2.position.y,

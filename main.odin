@@ -20,7 +20,7 @@ Enemy :: struct {
 TOTAL_CHECKS: int = 0
 COLLISIONS: int = 0
 
-enemies: [dynamic]Enemy
+enemies := make(map[i32]Enemy)
 
 
 //Function just spawns a bunch of enemies at random locations and speed
@@ -31,6 +31,7 @@ spawn_enemies :: proc() {
 }
 
 create_enemy :: proc() {
+    random_num := rand.int31()
     enemy := Enemy{
         position = [2]f32{
             rand.float32_range(150, SCREEN_WIDTH-150),
@@ -44,7 +45,20 @@ create_enemy :: proc() {
         height = 100,
         collided = false
     }
-    append(&enemies, enemy)
+    _, ok := enemies[random_num]
+    for ok {
+        random_num = rand.int31()
+        _, ok = enemies[random_num]
+    }
+    enemies[random_num] = enemy
+    populate_edge_array(random_num)
+}
+
+delete_enemy :: proc() {
+    for key in enemies {
+        delete_key(&enemies, key)
+        break
+    }
 }
 
 is_key_pressed :: proc(key: rl.KeyboardKey) -> bool {
@@ -57,13 +71,19 @@ main :: proc() {
 
     //Prepare enemies and create Edge array
     spawn_enemies()
-    populate_edge_array()
 
     for !rl.WindowShouldClose() {
         total_checks: int = 0
         collision: int = 0
 
         deltaTime := rl.GetFrameTime()
+
+        if is_key_pressed(.R) {
+            delete_enemy()
+        }
+        if is_key_pressed(.E) {
+            create_enemy()
+        }
 
         //Sort the edges either by insertion or use heap_sort
         insertion_sort_edges()
@@ -74,7 +94,8 @@ main :: proc() {
 
 
         //Update enemy positions
-        for &enemy, index in enemies {
+        for key in enemies {
+            enemy := &enemies[key]
             enemy.position.x += enemy.velocity.x
             enemy.position.y += enemy.velocity.y
 
@@ -90,7 +111,7 @@ main :: proc() {
         rl.ClearBackground(rl.RAYWHITE)
 
         //Render Enemies
-        for enemy in enemies {
+        for _, enemy in enemies {
             rect := rl.Rectangle{
                 x = enemy.position.x,
                 y = enemy.position.y,
